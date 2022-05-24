@@ -4,6 +4,7 @@ from openpyxl.styles import Border, Side, Alignment, PatternFill
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import QCoreApplication
 from PyQt5.QtGui import QIcon, QFont
+import win32com.client
 
 
 class BillApp(QWidget):
@@ -120,8 +121,13 @@ class BillApp(QWidget):
 
         year= 2022
         month= d[0]
+
         wb.save(f"xlsx/{year} - {month}.xlsx")
         print('done')
+
+        excel = win32com.client.Dispatch("Excel.Aplication")
+        excel.Visible=True
+        wb = excel.Workbooks.Open()
 
 
 
