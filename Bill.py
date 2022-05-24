@@ -18,34 +18,44 @@ class BillApp(QWidget):
         QToolTip.setFont(QFont('SansSerif', 10))
 
 
+        self.table = QTextBrowser()
         getTextButton = QPushButton('내역 넣기', self)
         getTextButton.clicked.connect(self.getMessageLog)
 
-        self.table = QTextBrowser()
+        self.line = QLineEdit(self)
+        folderButton = QPushButton("찾아보기..")
+        folderButton.clicked.connect(self.getPath)
 
         okButton = QPushButton('완료')
         okButton.clicked.connect(self.input_text)
-
         cancelButton = QPushButton('취소')
         cancelButton.clicked.connect(QCoreApplication.instance().quit)
 
 
-        hbox = QHBoxLayout()
-        hbox.addStretch(1)
-        hbox.addWidget(getTextButton)
-        hbox.addStretch(1)
+        getButton_hbox = QHBoxLayout()
+        getButton_hbox.addStretch(1)
+        getButton_hbox.addWidget(getTextButton)
+        getButton_hbox.addStretch(1)
 
-        hbox2 = QHBoxLayout()
-        hbox2.addStretch(1)
-        hbox2.addWidget(okButton)
-        hbox2.addWidget(cancelButton)
-        hbox2.addStretch(1)
+        path_hbox = QHBoxLayout()
+        path_hbox.addStretch(1)
+        path_hbox.addWidget(self.line)
+        path_hbox.addWidget(folderButton)
+        path_hbox.addStretch(1)
+
+        button_hbox = QHBoxLayout()
+        button_hbox.addStretch(1)
+        button_hbox.addWidget(okButton)
+        button_hbox.addWidget(cancelButton)
+        button_hbox.addStretch(1)
 
         vbox = QVBoxLayout()
         vbox.addWidget(self.table)
-        vbox.addLayout(hbox)
-        vbox.addStretch(3)
-        vbox.addLayout(hbox2)
+        vbox.addLayout(getButton_hbox)
+        vbox.addStretch(1)
+        vbox.addLayout(path_hbox)
+        vbox.addStretch(1)
+        vbox.addLayout(button_hbox)
         vbox.addStretch(1)
 
         self.setLayout(vbox)
@@ -71,6 +81,9 @@ class BillApp(QWidget):
             self.table.setText(str(text))
             self.message_log=str(text)
     
+    def getPath(self):
+        self.line.setText(str(QFileDialog.getExistingDirectory(self, "Select Directory")))
+    
     def input_text(self):
         log = self.message_log.split('[Web발신]\n')
         log_list=[]
@@ -85,49 +98,80 @@ class BillApp(QWidget):
         
         self.ca = checkApp(self, log_list)
         self.ca.exec()
-        BillApp.make_xlsx(log_list, self.ca.check_idx)
-        self.close()
+
+        if self.ca.check_idx:
+            BillApp.make_pdf(log_list, self.ca.check_idx, self.line.text())
+            self.close()
     
 
-    def make_xlsx(log, arr):
-        wb=Workbook()
-        ws=wb.active
-        ws.title="Bill"
+    def make_pdf(log, arr, path):
+        # wb=Workbook()
+        # ws=wb.active
+        # ws.title="Bill"
 
-        thin_border = Border(left=Side(style="thin"), right=Side(style="thin") \
-                            , top=Side(style="thin"), bottom=Side(style="thin"))
-        sky_blue = PatternFill(fgColor="B4C6E7", fill_type="solid")
-        gray = PatternFill(fgColor="D0CECE", fill_type="solid")
+        # thin_border = Border(left=Side(style="thin"), right=Side(style="thin") \
+        #                     , top=Side(style="thin"), bottom=Side(style="thin"))
+        # sky_blue = PatternFill(fgColor="B4C6E7", fill_type="solid")
+        # gray = PatternFill(fgColor="D0CECE", fill_type="solid")
 
-        ws.cell(1,1,"날짜").fill=sky_blue
-        ws.cell(1,2).fill=sky_blue
-        ws.cell(1,3,"가격").fill=sky_blue
-        ws.cell(1,3).alignment=Alignment(horizontal="center")
+        # ws.cell(1,1,"날짜").fill=sky_blue
+        # ws.cell(1,2).fill=sky_blue
+        # ws.cell(1,3,"가격").fill=sky_blue
+        # ws.cell(1,3).alignment=Alignment(horizontal="center")
+        # for idx in range(len(arr)):
+        #     txt = log[arr[idx]].split(" | ")
+        #     d=txt[0].split('/')
+        #     ws.cell(idx+2,1,f"{d[0]}월 {d[1]}일")
+        #     ws.cell(idx+2,2,txt[1])
+        #     ws[f"C{idx+2}"].value = int(txt[2].replace(',',''))
+        #     # ws.cell(idx+2,3,int(txt[2].replace(',',''))).alignment=Alignment(horizontal="right")
+        # ws.cell(idx+3,1,"합계").fill=gray
+        # ws.cell(idx+3,2,"-").fill=gray
+        # ws.cell(idx+3,3,f"=SUM(C2:C{idx+2})").fill=gray
+        # ws.column_dimensions['B'].width = 20
+        # for row in ['A','B','C']:
+        #     for cell in ws[row]:
+        #         if row!='C': cell.alignment=Alignment(horizontal="center")
+        #         cell.border=thin_border
+
+        # year= 2022
+        # month= d[0]
+
+        # wb.save(f"xlsx/{year} - {month}.xlsx")
+        # print('done')
+
+
+        excel = win32com.client.Dispatch("Excel.Application")
+        excel.Visible=True
+        workbook = excel.Workbooks.Add()
+        sheet = workbook.Worksheets("Sheet1")
+
+        sheet.Range("A1").Value = "날짜"
+        sheet.Range("C1").Value = "가격"
         for idx in range(len(arr)):
             txt = log[arr[idx]].split(" | ")
-            d=txt[0].split('/')
-            ws.cell(idx+2,1,f"{d[0]}월 {d[1]}일")
-            ws.cell(idx+2,2,txt[1])
-            ws[f"C{idx+2}"].value = int(txt[2].replace(',',''))
-            # ws.cell(idx+2,3,int(txt[2].replace(',',''))).alignment=Alignment(horizontal="right")
-        ws.cell(idx+3,1,"합계").fill=gray
-        ws.cell(idx+3,2,"-").fill=gray
-        ws.cell(idx+3,3,f"=SUM(C2:C{idx+2})").fill=gray
-        ws.column_dimensions['B'].width = 20
-        for row in ['A','B','C']:
-            for cell in ws[row]:
-                if row!='C': cell.alignment=Alignment(horizontal="center")
-                cell.border=thin_border
+            sheet.Cells(idx+2,1).Value = txt[0]
+            sheet.Cells(idx+2,2).Value = txt[1]
+            sheet.Range(f"C{idx+2}").Value = int(txt[2].replace(',',''))
+        sheet.Cells(idx+3,1).Value = "합계"
+        sheet.Cells(idx+3,2).Value = "-"
+        sheet.Cells(idx+3,3).Value = f"=SUM(C2:C{idx+2})"
+
+        sheet.Columns(2).ColumnWidth = 20
+        sheet.Range("A1:C1").Interior.ColorIndex = 24
+        sheet.Range("A{0}:C{0}".format(idx+3)).Interior.ColorIndex = 15
+        sheet.Range(f"A1:B{idx+3}").HorizontalAlignment  = 3
+        sheet.Range("C1").HorizontalAlignment  = 3        
+        all = sheet.Range(f"A1:C{idx+3}")
+        all.Borders.ColorIndex = 1
+        all.Borders.Weight = 2
+        all.Borders.LineStyle = 1
 
         year= 2022
-        month= d[0]
-
-        wb.save(f"xlsx/{year} - {month}.xlsx")
-        print('done')
-
-        excel = win32com.client.Dispatch("Excel.Aplication")
-        excel.Visible=True
-        wb = excel.Workbooks.Open()
+        month= txt[0].split('/')[0]
+        sheet.ActiveSheet.ExportAsFixedFormat(0, r"C:\Users\kjh26\OneDrive\문서\GitHub\bill\result\test.pdf")   # rf"{path}"+rf"\{year} - {month}.pdf") #f"./result/{year} - {month}.pdf")
+        sheet.Close(False)
+        excel.Quit()
 
 
 
