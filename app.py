@@ -1,6 +1,6 @@
 import sys
 from openpyxl import Workbook
-from openpyxl.styles import Border, Side, Alignment, PatternFill, Protection
+from openpyxl.styles import Border, Side, Alignment, PatternFill
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import QCoreApplication
 from PyQt5.QtGui import QIcon, QFont
