@@ -1,6 +1,4 @@
 import sys
-from openpyxl import Workbook
-from openpyxl.styles import Border, Side, Alignment, PatternFill
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import QCoreApplication
 from PyQt5.QtGui import QIcon, QFont
@@ -82,7 +80,7 @@ class BillApp(QWidget):
             self.message_log=str(text)
     
     def getPath(self):
-        self.line.setText(str(QFileDialog.getExistingDirectory(self, "Select Directory")))
+        self.line.setText(QFileDialog.getExistingDirectory(self, "Select Directory"))
     
     def input_text(self):
         log = self.message_log.split('[Web발신]\n')
@@ -105,46 +103,11 @@ class BillApp(QWidget):
     
 
     def make_pdf(log, arr, path):
-        # wb=Workbook()
-        # ws=wb.active
-        # ws.title="Bill"
-
-        # thin_border = Border(left=Side(style="thin"), right=Side(style="thin") \
-        #                     , top=Side(style="thin"), bottom=Side(style="thin"))
-        # sky_blue = PatternFill(fgColor="B4C6E7", fill_type="solid")
-        # gray = PatternFill(fgColor="D0CECE", fill_type="solid")
-
-        # ws.cell(1,1,"날짜").fill=sky_blue
-        # ws.cell(1,2).fill=sky_blue
-        # ws.cell(1,3,"가격").fill=sky_blue
-        # ws.cell(1,3).alignment=Alignment(horizontal="center")
-        # for idx in range(len(arr)):
-        #     txt = log[arr[idx]].split(" | ")
-        #     d=txt[0].split('/')
-        #     ws.cell(idx+2,1,f"{d[0]}월 {d[1]}일")
-        #     ws.cell(idx+2,2,txt[1])
-        #     ws[f"C{idx+2}"].value = int(txt[2].replace(',',''))
-        #     # ws.cell(idx+2,3,int(txt[2].replace(',',''))).alignment=Alignment(horizontal="right")
-        # ws.cell(idx+3,1,"합계").fill=gray
-        # ws.cell(idx+3,2,"-").fill=gray
-        # ws.cell(idx+3,3,f"=SUM(C2:C{idx+2})").fill=gray
-        # ws.column_dimensions['B'].width = 20
-        # for row in ['A','B','C']:
-        #     for cell in ws[row]:
-        #         if row!='C': cell.alignment=Alignment(horizontal="center")
-        #         cell.border=thin_border
-
-        # year= 2022
-        # month= d[0]
-
-        # wb.save(f"xlsx/{year} - {month}.xlsx")
-        # print('done')
-
-
         excel = win32com.client.Dispatch("Excel.Application")
         excel.Visible=True
         workbook = excel.Workbooks.Add()
-        sheet = workbook.Worksheets("Sheet1")
+        sheet = workbook.Sheets(1)
+        sheet.Name = "Bill"
 
         sheet.Range("A1").Value = "날짜"
         sheet.Range("C1").Value = "가격"
@@ -167,10 +130,14 @@ class BillApp(QWidget):
         all.Borders.Weight = 2
         all.Borders.LineStyle = 1
 
+        # sheet.Range(f"A1:C{idx+3}").Copy()
         year= 2022
         month= txt[0].split('/')[0]
-        sheet.ActiveSheet.ExportAsFixedFormat(0, r"C:\Users\kjh26\OneDrive\문서\GitHub\bill\result\test.pdf")   # rf"{path}"+rf"\{year} - {month}.pdf") #f"./result/{year} - {month}.pdf")
-        sheet.Close(False)
+        path+=f"/{year}-{month}.pdf"
+        path=path.encode('unicode_escape').decode()
+
+        workbook.ActiveSheet.ExportAsFixedFormat(0, path)
+        workbook.Close(False)
         excel.Quit()
 
 
@@ -211,26 +178,6 @@ class checkApp(QDialog):
         vbox.addLayout(hbox)
 
         self.setLayout(vbox)
-
-        # scroll = QScrollArea()
-        # scroll.setWidget(self.widget)
-
-        # hbox = QHBoxLayout()
-        # hbox.addWidget(scroll)
-
-        # hbox2 = QHBoxLayout()
-        # hbox2.addStretch(1)
-        # hbox2.addWidget(okButton)
-        # hbox2.addWidget(cancelButton)
-        # hbox2.addStretch(1)
-
-        # vbox = QVBoxLayout()
-        # # vbox.addLayout(hbox)
-        # vbox.addStretch(9)
-        # vbox.addLayout(hbox2)
-        # vbox.addStretch(1)
-
-        # self.setLayout(vbox)
 
         self.setWindowTitle('확인')
         self.setWindowIcon(QIcon('ico/checkbox.ico'))
