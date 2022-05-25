@@ -1,3 +1,2 @@
-openpyxl
 pyqt5
 pywin32
