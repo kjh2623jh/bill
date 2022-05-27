@@ -145,16 +145,16 @@ class BillApp(QWidget):
         all.Borders.LineStyle = 1
 
         try:
-            if not os.path.exists(path+"/build2/pdf"):
-                os.makedirs(path+"/build2/pdf")
-            if not os.path.exists(path+"/build2/png"):
-                os.makedirs(path+"/build2/png")
+            if not os.path.exists(path+"/build/pdf"):
+                os.makedirs(path+"/build/pdf")
+            if not os.path.exists(path+"/build/png"):
+                os.makedirs(path+"/build/png")
         except OSError:
-            print("Error: Creating diractory. "+path+"/build2/...")
+            print("Error: Creating diractory. "+path+"/build/...")
         else:
             year= 2022
             month= txt[0].split('/')[0]
-            path+=f"/build2"
+            path+=f"/build"
 
             sheet.Range(f"A1:C{idx+3}").Copy()
             img = ImageGrab.grabclipboard()
