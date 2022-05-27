@@ -1,14 +1,22 @@
 import sys
+import os
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import QCoreApplication
 from PyQt5.QtGui import QIcon, QFont
 import win32com.client
+from PIL import ImageGrab
+import json
 
 
 class BillApp(QWidget):
     def __init__(self):
         super().__init__()
         self.message_log = ''
+        try:
+            with open('Path.json') as f:
+                self.save_path = json.load(f)
+        except:
+            self.save_path = {"path":''}
 
         self.initUI()
 
@@ -21,11 +29,12 @@ class BillApp(QWidget):
         getTextButton.clicked.connect(self.getMessageLog)
 
         self.line = QLineEdit(self)
+        self.line.setText(self.save_path["path"])
         folderButton = QPushButton("찾아보기..")
         folderButton.clicked.connect(self.getPath)
 
         okButton = QPushButton('완료')
-        okButton.clicked.connect(self.input_text)
+        okButton.clicked.connect(self.accept)
         cancelButton = QPushButton('취소')
         cancelButton.clicked.connect(QCoreApplication.instance().quit)
 
@@ -76,13 +85,18 @@ class BillApp(QWidget):
         text, ok = QInputDialog.getMultiLineText(self, '내역', '메시지 붙여넣기:')
 
         if ok:
-            self.table.setText(str(text))
             self.message_log=str(text)
+            self.table.setText(self.message_log)
     
     def getPath(self):
-        self.line.setText(QFileDialog.getExistingDirectory(self, "Select Directory"))
-    
-    def input_text(self):
+        path=QFileDialog.getExistingDirectory(self, "Select Directory")
+        if path: self.line.setText(path)
+
+    def accept(self):
+        save_path = {"path": self.line.text()}
+        with open("Path.json", 'w') as f:
+            json.dump(save_path, f, indent=4)
+
         log = self.message_log.split('[Web발신]\n')
         log_list=[]
         for idx in range(1,len(log)):
@@ -98,11 +112,11 @@ class BillApp(QWidget):
         self.ca.exec()
 
         if self.ca.check_idx:
-            BillApp.make_pdf(log_list, self.ca.check_idx, self.line.text())
+            BillApp.makeFile(log_list, self.ca.check_idx, self.line.text())
             self.close()
     
 
-    def make_pdf(log, arr, path):
+    def makeFile(log, arr, path):
         excel = win32com.client.Dispatch("Excel.Application")
         excel.Visible=True
         workbook = excel.Workbooks.Add()
@@ -130,15 +144,25 @@ class BillApp(QWidget):
         all.Borders.Weight = 2
         all.Borders.LineStyle = 1
 
-        # sheet.Range(f"A1:C{idx+3}").Copy()
-        year= 2022
-        month= txt[0].split('/')[0]
-        path+=f"/{year}-{month}.pdf"
-        path=path.encode('unicode_escape').decode()
+        try:
+            if not os.path.exists(path+"/build/pdf"):
+                os.makedirs(path+"/build/pdf")
+            if not os.path.exists(path+"/build/png"):
+                os.makedirs(path+"/build/png")
+        except OSError:
+            print("Error: Creating diractory. "+path+"/build/...")
+        else:
+            year= 2022
+            month= txt[0].split('/')[0]
+            path+=f"/build"
 
-        workbook.ActiveSheet.ExportAsFixedFormat(0, path)
-        workbook.Close(False)
-        excel.Quit()
+            sheet.Range(f"A1:C{idx+3}").Copy()
+            img = ImageGrab.grabclipboard()
+            img.save(path+f"/png/{year}-{month}.png")
+            sheet.Cells(1,1).Copy()
+            workbook.ActiveSheet.ExportAsFixedFormat(0, path+f"/pdf/{year}-{month}")
+            workbook.Close(False)
+            excel.Quit()
 
 
 
@@ -153,7 +177,6 @@ class checkApp(QDialog):
         self.initUI()
 
     def initUI(self):
-        # self.widget = QWidget()
         for i in range(self.len_):
             self.check_list[i] = QCheckBox(self.log_list[i], self)
             self.check_list[i].toggle()
