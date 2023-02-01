@@ -1,5 +1,6 @@
 import sys
 import os
+import time
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import QCoreApplication
 from PyQt5.QtGui import QIcon, QFont
@@ -152,7 +153,7 @@ class BillApp(QWidget):
         except OSError:
             print("Error: Creating diractory. "+path+"/build/...")
         else:
-            year= 2022
+            year= time.gmtime().tm_year
             month= txt[0].split('/')[0]
             path+=f"/build"
 
